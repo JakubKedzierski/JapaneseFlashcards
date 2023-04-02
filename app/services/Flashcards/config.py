@@ -1,0 +1,6 @@
+KAFKA_SERVER = "localhost:9092"
+KAFKA_FETCH_TOPIC = "fetch_flashcard"
+KAFKA_GENERATE_TOPIC = "generate_flashcard"
+EXTERNAL_API_WORD = "https://example.com/api/english_word"
+EXTERNAL_API_TRANSLATE = "https://example.com/api/translate"
+DATABASE_URL = "sqlite:///flashcards.db"
