@@ -1,49 +1,49 @@
 import json
-import sqlite3
-from sqlite3 import DatabaseError
+from random import randint
 
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 from kafka import KafkaConsumer, KafkaProducer
-
-from config import KAFKA_SERVER, KAFKA_FETCH_TOPIC, KAFKA_GENERATE_TOPIC, EXTERNAL_API_WORD, EXTERNAL_API_TRANSLATE
+from config import KAFKA_SERVER, KAFKA_FETCH_TOPIC, KAFKA_GENERATE_TOPIC
 from database import flashcards, database
 import asyncio
+from jisho_api.word import Word
+import uvicorn
 
 app = FastAPI()
 
 
-# async def fetch_word():
-#     async with httpx.AsyncClient() as client:
-#         response = await client.get(EXTERNAL_API_WORD)
-#     return response.json()["word"]
+# level => 1 or 2 or 3 or 4
+async def fetch_word(level):
+    response = Word.request("#jlpt-n" + level)
+    position = randint(0, len(response.data) - 1)
+    data = response.data[position]
+
+    return {
+        "kanji": data.japanese[0].word,
+        "hiragana": data.japanese[0].reading,
+        "word": ", ".join(data.senses[0].english_definitions)
+    }
 
 
-# async def translate_word(word):
-#     async with httpx.AsyncClient() as client:
-#         response = await client.post(EXTERNAL_API_TRANSLATE, data={"word": word})
-#     return response.json()
-
-
-async def send_flashcard_to_kafka(flashcard):
-    # Podłączenie się do Kafki jako producent
+async def send_flashcard_to_kafka(flashcard, user_phone, user_email):
     producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
-
-    # Wysłanie fiszki do Kafki
-    producer.send(KAFKA_GENERATE_TOPIC, json.dumps(flashcard).encode("utf-8"))
+    message = {**flashcard, "user_phone": user_phone, "user_email": user_email}
+    producer.send(KAFKA_GENERATE_TOPIC, json.dumps(message).encode("utf-8"))
 
 
 async def save_flashcard_to_database(flashcard):
     query = flashcards.insert().values(**flashcard)
-
     await database.execute(query)
 
+    # <usunac>
     from sqlalchemy import select
     query = select([flashcards])
-    await database.fetch_all(query)
+    x = await database.fetch_all(query)
+    print(x)
+    # </usunac>
 
 
 async def kafka_fetch_consumer():
-    # Podłączenie się do Kafki jako konsument
     consumer = KafkaConsumer(
         KAFKA_FETCH_TOPIC,
         bootstrap_servers=KAFKA_SERVER,
@@ -57,28 +57,21 @@ async def kafka_fetch_consumer():
             for _, records in msg.items():
                 for record in records:
                     user_id = record.value["user_id"]
+                    level = record.value["level"]
+                    user_phone = record.value["user_phone"]
+                    user_email = record.value["user_email"]
 
-                    # word = await fetch_word()
-                    word = 'example'
+                    word = await fetch_word(level)
 
-                    # translations = await translate_word(word)
-                    translations = {
-                        "hiragana": "ひらがな",
-                        "katakana": "カタカナ",
-                        "kanji": "漢字",
-                        "romaji": "romaji",
-                    }
+                    flashcard = {**word, "user_id": user_id}
 
-                    flashcard = {"english_word": word, **translations, "user_id": user_id}
-
-                    await send_flashcard_to_kafka(flashcard)
+                    await send_flashcard_to_kafka(flashcard, user_phone, user_email)
                     await save_flashcard_to_database(flashcard)
+                    print(flashcard)
 
-        # Czekamy sekundę, żeby nie spaliło komputera
         await asyncio.sleep(1)
 
 
-# Event z FastAPI na start apki
 @app.on_event("startup")
 async def startup():
     await database.connect()
@@ -86,5 +79,4 @@ async def startup():
 
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
