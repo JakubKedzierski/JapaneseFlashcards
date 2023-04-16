@@ -1,12 +1,13 @@
 import json
 from fastapi import FastAPI
 from kafka import KafkaConsumer
+from send_email import send_email_async
+import asyncio
 
 from config import KAFKA_SERVER, KAFKA_GENERATE_TOPIC
 import asyncio
 
 app = FastAPI()
-
 
 
 async def ProcessFlashcards():
@@ -17,24 +18,22 @@ async def ProcessFlashcards():
     )
 
     while True:
-        msg = consumer.poll(timeout_ms=1000)
+        msg = consumer.poll(timeout_ms=5000)
         if msg:
             for _, records in msg.items():
                 for record in records:
                     user_id = record.value["user_id"]
-                    print("Notifications: got flashcard user_id: {}".format(user_id))
+                    email = record.value["email"]
+                    phone = record.value["phone"]
 
-                    # Ask for user data
+                    print("Notifications: got flashcard user_id: {}, email: {}, phone: {}".format(user_id, email, phone))
 
-                    # Wait for user data
-
-                    # Send email 
+                    await send_email_async('Flashcard','flashcard_temp@gmail.com', 'Here your flaschard :)')
 
                     # if phone present:
                         # send SMS
 
         await asyncio.sleep(1)
-
 
 
 @app.on_event("startup")
