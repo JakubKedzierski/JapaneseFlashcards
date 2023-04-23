@@ -31,9 +31,9 @@ async def add_user(user: User):
 async def get_user_data(user_id: int):
     async with database.transaction():
         query = select(users).where(users.c.id == user_id)
-        x = await database.fetch_all(query)
+        x = await database.fetch_one(query)
 
-    return str(x)
+    return x
 
 if __name__ == "__main__":
     import uvicorn
