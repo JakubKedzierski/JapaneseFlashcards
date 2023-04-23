@@ -4,6 +4,9 @@ Japanese-English Flashcards - microservice project
 ## Info  
 * Flashcards - python ./app.py, localhost:8000   
 * Notifications - python ./app.py, localhost:8001   
+    * setup account on https://mailtrap.io/
+    * copy credentials to app/serices/Notifications/.env from inboxes -> 'SMTP Settings' -> Show Credentials
+    * if email limit exceeded create new account? and type in new credentials (getting error "Connection refused")
   
   
 * UserManager - python ./app.py, localhost:8002  
