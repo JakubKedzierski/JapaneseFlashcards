@@ -1,7 +1,12 @@
 # JapaneseFlashcards
 Japanese-English Flashcards - microservice project  
+
+## Info  
+* Flashcards - python ./app.py, localhost:8000   
+* Notifications - python ./app.py, localhost:8001   
+* UserManager - python ./app.py, localhost:8002  
   
-Run Kaffka in container and connect flashcards to it Tutorial:  
+## Run Kaffka in container and connect flashcards to it Tutorial:  
   
   
 here good tutorial: https://www.youtube.com/watch?v=jtBVppyfDbE&t=869s&ab_channel=ChristianLempa for some steps below  
