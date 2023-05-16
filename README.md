@@ -2,14 +2,24 @@
 Japanese-English Flashcards - microservice project  
 
 ## Info  
-* Flashcards - python ./app.py, localhost:8000   
-* Notifications - python ./app.py, localhost:8001   
+* Flashcards - `python ./app.py`, localhost:8000   
+* Notifications - `python ./app.py`, localhost:8001   
     * setup account on https://mailtrap.io/
     * copy credentials to app/serices/Notifications/.env from inboxes -> 'SMTP Settings' -> Show Credentials
+    * env file should look like that:  
+      `
+      MAIL_SERVER='sandbox.smtp.mailtrap.io'
+      MAIL_PORT = 2525
+      MAIL_USERNAME = 'user_name'
+      MAIL_PASSWORD = 'user_password'
+      MAIL_STARTTLS = True
+      MAIL_SSL_TLS = False
+      MAIL_FROM = 'flashcards@gmail.com'
+      `
     * if email limit exceeded create new account? and type in new credentials (getting error "Connection refused")
   
   
-* UserManager - python ./app.py, localhost:8002  
+* UserManager - `python ./app.py`, localhost:8002  
     * Test:  
         * save user - `curl -X POST -H "Content-Type: application/json" -d '{"user_email": "john.doe@example.com", "user_phone": "1234567890", "token": "my-token"}' http://localhost:8002/user/add_user`  
         * get user - `curl localhost:8002/user/1`  
