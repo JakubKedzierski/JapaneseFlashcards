@@ -4,11 +4,40 @@ from kafka import KafkaConsumer
 from send_email import send_email_async
 import asyncio
 
-from config import KAFKA_SERVER, KAFKA_GENERATE_TOPIC
+from config import KAFKA_SERVER, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC
 import asyncio
 import requests
+from database import users, database
+from sqlalchemy import select
 
 app = FastAPI()
+
+async def ProcessUsers():
+    consumer = KafkaConsumer(
+        KAFKA_USER_TOPIC,
+        bootstrap_servers=KAFKA_SERVER,
+        value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+    )
+
+    print("[Notification service] Start processing users \n")
+
+    while True:
+        msg = consumer.poll(timeout_ms=5000)
+        if msg:
+            for _, records in msg.items():
+                for record in records:
+                    user_id = record.value["user_id"]
+                    user_email = record.value["user_email"]
+                    user_phone = record.value["user_phone"]
+
+                    print("[Notification service] received user: {} {} {} ".format(user_id, user_email, user_phone))
+
+                    async with database.transaction():
+                        user_db = {"id":user_id, "user_email":user_email, "user_phone":user_phone}
+                        query = users.insert().values(**user_db)
+                        await database.execute(query)
+
+        await asyncio.sleep(1)
 
 
 async def ProcessFlashcards():
@@ -17,6 +46,8 @@ async def ProcessFlashcards():
         bootstrap_servers=KAFKA_SERVER,
         value_deserializer=lambda m: json.loads(m.decode("utf-8")),
     )
+
+    print("[Notification service] Start processing flashcards \n")
 
     while True:
         msg = consumer.poll(timeout_ms=5000)
@@ -30,31 +61,37 @@ async def ProcessFlashcards():
                     hiragana = record.value["hiragana"]
                     word = record.value["word"]
 
-                    # request user data
+                    # get user data
+                    async with database.transaction():
+                        query = select(users).where(users.c.id == user_id)
+                        user_data = await database.fetch_one(query)
+
+                    user_id = user_data["user_id"]
+                    user_email = user_data["user_email"]
+                    phone = user_data['user_phone']
+                    print("[Notification service] get user data from db : {} {} ".format(user_id, user_email))
+
+                    """
+                    # old endpoint idea
                     get_request = "http://localhost:8002/user/{}".format(user_id)
                     response = requests.get(get_request)
-                    
-                    # user data
                     user_data = []
                     if response.status_code != 200:
                         print("User data request Error")
                         continue
                     else:
                         user_data = response.json()
-                    
                     if "user_email" not in user_data or "user_phone" not in user_data:
                         print("Bad user data")
                         continue
-
                     email = user_data['user_email']
                     phone = user_data['user_phone']
-
-
                     print("Notifications: got flashcard user_id: {}, email: {}, phone: {}".format(user_id, email, phone))
+                    """
 
                     # send email
                     text_msg = "Here your flaschard: \nhiragana={}, kanji={}, translation={}".format(hiragana, kanji, word)
-                    await send_email_async('Flashcard', email, text_msg)
+                    await send_email_async('Flashcard', user_email, text_msg)
 
                     # send SMS
                     # if phone present:
@@ -66,6 +103,7 @@ async def ProcessFlashcards():
 @app.on_event("startup")
 async def startup():
     app.flashcard_task = asyncio.create_task(ProcessFlashcards())
+    app.user_task = asyncio.create_task(ProcessUsers())
 
 
 if __name__ == "__main__":
