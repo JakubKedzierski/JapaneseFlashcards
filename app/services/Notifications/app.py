@@ -4,7 +4,7 @@ from kafka import KafkaConsumer
 from send_email import send_email_async
 import asyncio
 
-from config import KAFKA_SERVER, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC
+from config import KAFKA_SERVER, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC, QUIZ_TOPIC
 import asyncio
 import requests
 from database import users, database
@@ -22,7 +22,7 @@ async def ProcessUsers():
     print("[Notification service] Start processing users \n")
 
     while True:
-        msg = consumer.poll(timeout_ms=5000)
+        msg = consumer.poll(timeout_ms=1000)
         if msg:
             for _, records in msg.items():
                 for record in records:
@@ -50,7 +50,7 @@ async def ProcessFlashcards():
     print("[Notification service] Start processing flashcards \n")
 
     while True:
-        msg = consumer.poll(timeout_ms=5000)
+        msg = consumer.poll(timeout_ms=1000)
         if msg:
             for _, records in msg.items():
                 for record in records:
@@ -100,10 +100,45 @@ async def ProcessFlashcards():
         await asyncio.sleep(1)
 
 
+async def ProcessQuizzes():
+    consumer = KafkaConsumer(
+        QUIZ_TOPIC,
+        bootstrap_servers=KAFKA_SERVER,
+        value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+    )
+
+    print("[Notification service] Start processing quizzes \n")
+
+    while True:
+        msg = consumer.poll(timeout_ms=1000)
+        if msg:
+            for _, records in msg.items():
+                for record in records:
+
+                    # quiz data
+                    user_id = record.value["user_id"]
+                    quiz_msg = record.value["quiz_msg"]
+
+                    print("[Notification service] got quiz  {} {}".format(user_id, quiz_msg))
+
+                    # get user data
+                    user_data = None
+                    async with database.transaction():
+                        query = select(users).where(users.c.id == user_id)
+                        user_data = await database.fetch_one(query)     
+                    
+                    user_email = user_data["user_email"]
+                    phone = user_data['user_phone']
+                    print("[Notification service] quiz will be sent for user : {} {} ".format(user_id, user_email))
+
+        await asyncio.sleep(1)
+
+
 @app.on_event("startup")
 async def startup():
     app.flashcard_task = asyncio.create_task(ProcessFlashcards())
     app.user_task = asyncio.create_task(ProcessUsers())
+    app.quiz_task = asyncio.create_task(ProcessQuizzes())
 
 
 if __name__ == "__main__":

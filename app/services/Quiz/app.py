@@ -13,7 +13,7 @@ quiz_producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
 def send_quiz_job():
     print("[Quiz Service] Quiz time - sending quiz to other services")
     
-    quiz = {"dump_data" : 0}
+    quiz = {"user_id" : 16, "quiz_msg" : "Here is your quiz: quiz_link"}
     quiz_producer.send(QUIZ_TOPIC, json.dumps(quiz).encode("utf-8"))
 
 
