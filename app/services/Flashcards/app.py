@@ -39,8 +39,9 @@ async def save_flashcard_to_database(flashcard):
     from sqlalchemy import select
     query = select([flashcards])
     x = await database.fetch_all(query)
-    print(x)
+    print("Flashcard saved to db: {}".format(x))
     # </usunac>
+
 
 
 async def kafka_fetch_consumer():
@@ -71,6 +72,16 @@ async def kafka_fetch_consumer():
 
         await asyncio.sleep(1)
 
+@app.post("/debug_endpoints/send_flashcard", status_code=200)
+async def send_flashcard():
+    producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
+    user_id = 19
+    producer.send(KAFKA_FETCH_TOPIC, json.dumps({"user_id":str(user_id),
+                                                 "level" : str(1),
+                                                 "user_email":"example@aa",
+                                                 "user_phone": 123123123
+                                                 }).encode("utf-8"))
+    return 'FLASHCARD SENT'
 
 @app.on_event("startup")
 async def startup():

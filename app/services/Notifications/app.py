@@ -2,6 +2,7 @@ import json
 from fastapi import FastAPI
 from kafka import KafkaConsumer
 from send_email import send_email_async
+from send_sms import send_sms
 import asyncio
 
 from config import KAFKA_SERVER, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC, QUIZ_TOPIC
@@ -9,6 +10,7 @@ import asyncio
 import requests
 from database import users, database
 from sqlalchemy import select
+
 
 app = FastAPI()
 
@@ -94,8 +96,15 @@ async def ProcessFlashcards():
                     await send_email_async('Flashcard', user_email, text_msg)
 
                     # send SMS
-                    # if phone present:
-                        # send SMS
+                    #sms
+                    if phone:
+                        msg = "SMS to +{} \n".format(phone) + text_msg
+                        try:
+                            send_sms(msg)
+                        except:
+                            print("[Notifications service] Sending sms has failed.")
+                    else:
+                        print("[Notifications service] No phone provided.")
 
         await asyncio.sleep(1)
 
@@ -129,7 +138,19 @@ async def ProcessQuizzes():
                     
                     user_email = user_data["user_email"]
                     phone = user_data['user_phone']
-                    print("[Notification service] quiz will be sent for user : {} {} ".format(user_id, user_email))
+                    print("[Notification service] quiz will be sent for user : {} {} {}".format(user_id, user_email, phone))
+
+                    await send_email_async('Quiz', user_email, quiz_msg)
+
+                    #sms
+                    if phone:
+                        msg = "SMS to +{} \n".format(phone) + quiz_msg
+                        try:
+                            send_sms(msg)
+                        except:
+                            print("[Notifications service] Sending sms has failed.")
+                    else:
+                        print("[Notifications service] No phone provided.")
 
         await asyncio.sleep(1)
 

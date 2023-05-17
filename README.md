@@ -3,9 +3,13 @@ Japanese-English Flashcards - microservice project
 
 ## Info  
 * Flashcards - `python ./app.py`, localhost:8000   
+    * debug flashcard: `curl -X POST -H "Content-Type: application/json" http://localhost:8000/debug_endpoints/send_flashcard`  
 * Notifications - `python ./app.py`, localhost:8001   
     * setup account on https://mailtrap.io/
     * copy credentials to app/serices/Notifications/.env from inboxes -> 'SMTP Settings' -> Show Credentials
+    * setup account on https://www.twilio.com/docs/sms/api
+    * copy credentials to app/serices/Notifications/.env from inboxes -> 'Account Info' -> Account SID / Auth Token
+      
     * env file should look like that:  
       `
       MAIL_SERVER='sandbox.smtp.mailtrap.io'
@@ -15,8 +19,12 @@ Japanese-English Flashcards - microservice project
       MAIL_STARTTLS = True
       MAIL_SSL_TLS = False
       MAIL_FROM = 'flashcards@gmail.com'
+      SMS_SID = 'sms_sid'
+      SMS_AUTH_TOKEN = 'sms_auth_token'
+      SMS_FROM = 'sms_from'
+      SMS_TO = 'sms_to'
       `
-    * if email limit exceeded create new account? and type in new credentials (getting error "Connection refused")
+    * if email limit exceeded create new account? and type in new credentials (getting error "Connection refused"), same for sms
   
   
 * UserManager - `python ./app.py`, localhost:8002  
@@ -24,9 +32,16 @@ Japanese-English Flashcards - microservice project
         * save user - `curl -X POST -H "Content-Type: application/json" -d '{"user_email": "john.doe@example.com", "user_phone": "1234567890", "token": "my-token"}' http://localhost:8002/user/add_user`  
         * get user - `curl localhost:8002/user/1`  
   
-* Quiz - `python ./app.py`, localhost:8003     
+* Quiz - `python ./app.py`, localhost:8003  
+     * Test:
+         * send quiz - `curl -X POST -H "Content-Type: application/json" http://localhost:8003/debug_endpoints/send_quiz`   
     
-   
+
+* Twilio: `curl -X POST "https://api.twilio.com/2010-04-01/Accounts/sid/Messages.json" ^`
+  `--data-urlencode "Body=Hello from Twilio" ^`
+  `--data-urlencode "From=phone" ^`
+  `--data-urlencode "To=phone" ^`
+  `-u "sid:auth_token"`
   
 ## Run Kaffka in container and connect flashcards to it Tutorial:  
    
