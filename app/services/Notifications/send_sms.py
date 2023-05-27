@@ -21,4 +21,4 @@ def send_sms(msg):
             to=SMS_EVNS.SMS_TO
         )
 
-    print(message)
+    print("[Notification service] sms sent, status: {}".format(message))

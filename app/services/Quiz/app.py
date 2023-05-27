@@ -92,7 +92,7 @@ async def ProcessFlashcards():
         value_deserializer=lambda m: json.loads(m.decode("utf-8")),
     )
 
-    print("[Notification service] Start processing flashcards \n")
+    print("[Quiz service] Start processing flashcards \n")
 
     while True:
         msg = consumer.poll(timeout_ms=1000)

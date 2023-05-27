@@ -3,7 +3,8 @@ Japanese-English Flashcards - microservice project
 
 ## Info  
 * Flashcards - `python ./app.py`, localhost:8000   
-    * debug flashcard: `curl -X POST -H "Content-Type: application/json" http://localhost:8000/debug_endpoints/send_flashcard`  
+    * debug flashcard: `curl -X POST -H "Content-Type: application/json" http://localhost:8000/debug_endpoints/send_flashcard/{user_id}`, eg: 
+      `curl -X POST -H "Content-Type: application/json" http://localhost:8000/debug_endpoints/send_flashcard/5`
 * Notifications - `python ./app.py`, localhost:8001   
     * setup account on https://mailtrap.io/
     * copy credentials to app/serices/Notifications/.env from inboxes -> 'SMTP Settings' -> Show Credentials
@@ -31,7 +32,9 @@ Japanese-English Flashcards - microservice project
     * Test:  
         * save user - `curl -X POST -H "Content-Type: application/json" -d '{"user_email": "Kacper.Miowalski@example.com", "user_phone": "123456781", "token": "my-token", "level":"3"}' http://localhost:8002/user/add_user`  
         * get user - `curl localhost:8002/user/1`  
-  
+        * Info: data validation -> frontend
+        * DB view: `qlite3 user_database.db` and then: `select * from user;`
+   
 * Quiz - `python ./app.py`, localhost:8003  
      * Test:
          * send quiz - `curl -X POST -H "Content-Type: application/json" http://localhost:8003/debug_endpoints/send_quiz`   

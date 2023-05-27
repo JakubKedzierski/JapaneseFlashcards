@@ -80,7 +80,12 @@ async def ProcessFlashcards():
 
                     # send email
                     text_msg = "Here your flaschard: \nhiragana={}, kanji={}, translation={}".format(hiragana, kanji, word)
-                    await send_email_async('Flashcard', user_email, text_msg)
+                    try:
+                        await send_email_async('Flashcard', user_email, text_msg)
+                        print("[Notification service] flashcard email sent for user id: : {} email: {} ".format(user_id, user_email))
+                    except Exception as e:
+                        print("[Notification service] Sending email has failed. Probably bad email. Error: {}".format(e))
+
 
                     # send SMS
                     #sms
@@ -89,7 +94,7 @@ async def ProcessFlashcards():
                         try:
                             send_sms(msg)
                         except:
-                            print("[Notifications service] Sending sms has failed.")
+                            print("[Notifications service] Sending sms has failed. Probably bad phone number.")
                     else:
                         print("[Notifications service] No phone provided.")
 
@@ -127,8 +132,12 @@ async def ProcessQuizzes():
                     phone = user_data['user_phone']
                     print("[Notification service] quiz will be sent for user : {} {} {}".format(user_id, user_email, phone))
 
-                    await send_email_async('Quiz', user_email, quiz_msg)
-
+                    try:
+                        await send_email_async('Quiz', user_email, quiz_msg)
+                        print("[Notification service] quiz email sent for user id: : {} email: {} ".format(user_id, user_email))
+                    except Exception as e:
+                        print("[Notification service] Sending email has failed. Probably bad email. Error: {}".format(e))
+                                        
                     #sms
                     if phone:
                         msg = "SMS to +{} \n".format(phone) + quiz_msg

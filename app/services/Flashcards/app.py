@@ -105,12 +105,11 @@ async def ProcessUsers():
 
         await asyncio.sleep(1)
 
-@app.post("/debug_endpoints/send_flashcard", status_code=200)
-async def send_flashcard():
+@app.post("/debug_endpoints/send_flashcard/{id}", status_code=200)
+async def send_flashcard(id: int):
     producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
-    user_id = 19
-    producer.send(KAFKA_FETCH_TOPIC, json.dumps({"user_id":str(user_id)}).encode("utf-8"))
-    return 'FLASHCARD SENT'
+    producer.send(KAFKA_FETCH_TOPIC, json.dumps({"user_id":str(id)}).encode("utf-8"))
+    return '[Flashcard service] : debug flashcard sent'
 
 @app.on_event("startup")
 async def startup():

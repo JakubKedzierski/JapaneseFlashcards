@@ -21,7 +21,7 @@ async def save_user_to_database(user):
         result = await database.execute(query)
         user_id = result
 
-    print("User created and saved to DB. ID: {}, email: {}".format(user_id, user['user_email']))
+    print("[User Manager] User created and saved to DB. ID: {}, email: {}".format(user_id, user['user_email']))
     return user_id
 
 
