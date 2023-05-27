@@ -65,7 +65,7 @@ async def process_flashcards():
 
                     user_id = user_data["id"]
                     user_level = user_data["level"]
-                    print("[Flashcard service] get user data from db : {} {} ".format(user_id, user_level))
+                    print("[Flashcard service] get user data from db : id: {} user_level: {} ".format(user_id, user_level))
 
                     word = await fetch_word(user_level)
 

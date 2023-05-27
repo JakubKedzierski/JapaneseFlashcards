@@ -39,8 +39,10 @@ Japanese-English Flashcards - microservice project
      * Test:
          * send quizes for all users - `curl -X POST -H "Content-Type: application/json" http://localhost:8003/debug_endpoints/send_quizes`  
          * send quizes for all users - `curl -X POST -H "Content-Type: application/json" http://localhost:8003/debug_endpoints/send_single_quiz/{user_id}`   
-    
-
+         * get quiz data for user - `curl -X GET -H "Content-Type: application/json" http://localhost:8003/quiz/{user_id}`, exemplary response:
+      {"id":1,"user_id":"1","date":"2023-05-01","quiz_content":"\"[{\\\"id\\\": 1, \\\"user_id\\\": \\\"1\\\", \\\"word\\\": \\\"guarantee, security, assurance, pledge, warranty\\\", \\\"hiragana\\\": \\\"\\\\u307b\\\\u3057\\\\u3087\\\\u3046\\\", \\\"kanji\\\": \\\"\\\\u4fdd\\\\u8a3c\\\"}]\""}
+     
+   
 * Twilio: `curl -X POST "https://api.twilio.com/2010-04-01/Accounts/sid/Messages.json" ^`
   `--data-urlencode "Body=Hello from Twilio" ^`
   `--data-urlencode "From=phone" ^`

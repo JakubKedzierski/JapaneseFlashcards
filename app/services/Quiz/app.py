@@ -137,8 +137,11 @@ async def ProcessFlashcards():
 @app.get("/quiz/{user_id}", status_code=200)
 async def get_quiz_data(user_id: int):
     async with database.transaction():
-        quiz_date = datetime.today().replace(day=1).date()
-        query = select(quizes).where(quizes.c.user_id == user_id, quizes.c.date == quiz_date).order_by(quizes.c.date)
+        # not processing date for now
+        #quiz_date = datetime.today().replace(day=1).date()
+        #query = select(quizes).where(quizes.c.user_id == user_id, quizes.c.date == quiz_date).order_by(quizes.c.date)
+        
+        query = select(quizes).where(quizes.c.user_id == user_id).order_by(quizes.c.date)
         x = await database.fetch_one(query)
 
     return x
