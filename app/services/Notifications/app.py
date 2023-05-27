@@ -120,7 +120,7 @@ async def ProcessQuizzes():
                     user_id = record.value["user_id"]
                     quiz_msg = record.value["quiz_msg"]
 
-                    print("[Notification service] got quiz  {} {}".format(user_id, quiz_msg))
+                    print("[Notification service] got quiz for id: {} quiz_msg: {}".format(user_id, quiz_msg))
 
                     # get user data
                     user_data = None

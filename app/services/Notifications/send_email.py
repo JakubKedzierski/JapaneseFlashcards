@@ -35,7 +35,7 @@ async def send_email_async(subject: str, email_to: str, body: str):
 
     fast_mail = FastMail(conf)
 
-    print("Send Email to {}".format(email_to))
+    print("[Notification service] Send Email to {}".format(email_to))
     await fast_mail.send_message(message)
 
 

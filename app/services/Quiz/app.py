@@ -18,9 +18,14 @@ quiz_producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
 async def send_quiz_job():
     print("[Quiz Service] Quiz time - generating quiz for current month")
     # get users data
-    async with database.transaction():
-        query = select(users)
-        users_data = await database.fetch_all(query)
+    try:
+        async with database.transaction():
+            query = select(users)
+            users_data = await database.fetch_all(query)
+    except Exception as e:
+        print("[Quiz Service]: db error: {}".format(e))
+        return
+    
     print("[Quiz service] get users data from db : {} ".format(users_data))
     
     for user in users_data: 
@@ -31,14 +36,20 @@ async def send_quiz_job():
         async with database.transaction():
             query = select(flashcards).where(flashcards.c.user_id == user_id) #need to collect flashcards fron current month only - add date in flashcard
             users_flashcards_data = await database.fetch_all(query)
- 
-        quiz_content = json.dumps(users_flashcards_data)
+
+        if not users_flashcards_data:
+             print("[Quiz Service]: user {} doesn't have any flashcard, continue".format(user_id))
+             continue
+
+        users_flashcards_data = [dict(row) for row in users_flashcards_data]
+        users_flashcards_data_json = json.dumps(users_flashcards_data)
+        quiz_content = json.dumps(users_flashcards_data_json)
 
         # insert quiz
         async with database.transaction():
-                        quiz_db = {"user_id":user_id, "quiz_date": quiz_date, "quiz_content":quiz_content}
-                        query = quizes.insert().values(**quiz_db)
-                        await database.execute(query)
+            quiz_db = {"user_id":user_id, "date": quiz_date, "quiz_content":quiz_content}
+            query = quizes.insert().values(**quiz_db)
+            await database.execute(query)
 
         print("[Quiz Service] Quiz time - sending quiz to other services for user {}".format(user_id))
         
@@ -128,7 +139,7 @@ async def get_quiz_data(user_id: int):
 
 @app.post("/debug_endpoints/send_quiz", status_code=200)
 async def send_quiz():
-    send_quiz_job()
+    await send_quiz_job()
     return 'QUIZ SENT'
 
 
