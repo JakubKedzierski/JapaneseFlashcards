@@ -30,31 +30,38 @@ async def send_quiz_job():
     
     for user in users_data: 
         user_id = user["id"]
-        quiz_date = datetime.today().replace(day=1).date()
+        await send_quiz_for_single_user(user_id)
 
-        # get users flashcards data
-        async with database.transaction():
-            query = select(flashcards).where(flashcards.c.user_id == user_id) #need to collect flashcards fron current month only - add date in flashcard
-            users_flashcards_data = await database.fetch_all(query)
+async def send_quiz_for_single_user(user_id):
+    quiz_date = datetime.today().replace(day=1).date()
 
-        if not users_flashcards_data:
-             print("[Quiz Service]: user {} doesn't have any flashcard, continue".format(user_id))
-             continue
+    # get users flashcards data
+    async with database.transaction():
+        query = select(flashcards).where(flashcards.c.user_id == user_id) #need to collect flashcards fron current month only - add date in flashcard
+        users_flashcards_data = await database.fetch_all(query)
 
-        users_flashcards_data = [dict(row) for row in users_flashcards_data]
-        users_flashcards_data_json = json.dumps(users_flashcards_data)
-        quiz_content = json.dumps(users_flashcards_data_json)
+    if not users_flashcards_data:
+        print("[Quiz Service]: user {} doesn't have any flashcard, continue".format(user_id))
+        return
 
-        # insert quiz
+    users_flashcards_data = [dict(row) for row in users_flashcards_data]
+    users_flashcards_data_json = json.dumps(users_flashcards_data)
+    quiz_content = json.dumps(users_flashcards_data_json)
+
+    # insert quiz
+    try:
         async with database.transaction():
             quiz_db = {"user_id":user_id, "date": quiz_date, "quiz_content":quiz_content}
             query = quizes.insert().values(**quiz_db)
             await database.execute(query)
+    except Exception as e:
+        print("[Quiz Service]: Saving quiz has failed, db error: {}".format(e))
 
-        print("[Quiz Service] Quiz time - sending quiz to other services for user {}".format(user_id))
-        
-        quiz = {"user_id" : user_id, "quiz_msg" : "Here is your quiz: quiz_link"}
-        quiz_producer.send(QUIZ_TOPIC, json.dumps(quiz).encode("utf-8"))
+    print("[Quiz Service] Quiz time - sending quiz to other services for user {}".format(user_id))
+    
+    quiz = {"user_id" : user_id, "quiz_msg" : "Here is your quiz: quiz_link"}
+    quiz_producer.send(QUIZ_TOPIC, json.dumps(quiz).encode("utf-8"))
+
 
 
 async def schedule_task():
@@ -137,10 +144,15 @@ async def get_quiz_data(user_id: int):
     return x
 
 
-@app.post("/debug_endpoints/send_quiz", status_code=200)
-async def send_quiz():
+@app.post("/debug_endpoints/send_quizes", status_code=200)
+async def send_quizes():
     await send_quiz_job()
-    return 'QUIZ SENT'
+    return '[Quiz Service]: Quiz sent for all users'
+
+@app.post("/debug_endpoints/send_single_quiz/{id}", status_code=200)
+async def send_single_quiz(id: int):
+    await send_quiz_for_single_user(id)
+    return '[Quiz Service]: Quiz sent for single user'
 
 
 @app.on_event("startup")

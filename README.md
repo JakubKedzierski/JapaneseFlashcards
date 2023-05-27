@@ -37,7 +37,8 @@ Japanese-English Flashcards - microservice project
    
 * Quiz - `python ./app.py`, localhost:8003  
      * Test:
-         * send quiz - `curl -X POST -H "Content-Type: application/json" http://localhost:8003/debug_endpoints/send_quiz`   
+         * send quizes for all users - `curl -X POST -H "Content-Type: application/json" http://localhost:8003/debug_endpoints/send_quizes`  
+         * send quizes for all users - `curl -X POST -H "Content-Type: application/json" http://localhost:8003/debug_endpoints/send_single_quiz/{user_id}`   
     
 
 * Twilio: `curl -X POST "https://api.twilio.com/2010-04-01/Accounts/sid/Messages.json" ^`
