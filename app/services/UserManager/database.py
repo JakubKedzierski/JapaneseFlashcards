@@ -12,6 +12,7 @@ users = Table(
     Column("user_email", String),
     Column("user_phone", String),
     Column("token", String),
+    Column("level", String)
 )
 
 metadata.create_all(engine)

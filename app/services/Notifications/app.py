@@ -34,10 +34,15 @@ async def ProcessUsers():
 
                     print("[Notification service] received user: {} {} {} ".format(user_id, user_email, user_phone))
 
-                    async with database.transaction():
-                        user_db = {"id":user_id, "user_email":user_email, "user_phone":user_phone}
-                        query = users.insert().values(**user_db)
-                        await database.execute(query)
+                    try:
+                        async with database.transaction():
+                            user_db = {"id":user_id, "user_email":user_email, "user_phone":user_phone}
+                            query = users.insert().values(**user_db)
+                            await database.execute(query)
+
+                        print("[Notification service] user saved to db: {} ".format(user_id))
+                    except Exception as e:
+                        print("[Notification service] failed to save user in DB : {}".format(e))
 
         await asyncio.sleep(1)
 
@@ -72,24 +77,6 @@ async def ProcessFlashcards():
                     user_email = user_data["user_email"]
                     phone = user_data['user_phone']
                     print("[Notification service] get user data from db : {} {} ".format(user_id, user_email))
-
-                    """
-                    # old endpoint idea
-                    get_request = "http://localhost:8002/user/{}".format(user_id)
-                    response = requests.get(get_request)
-                    user_data = []
-                    if response.status_code != 200:
-                        print("User data request Error")
-                        continue
-                    else:
-                        user_data = response.json()
-                    if "user_email" not in user_data or "user_phone" not in user_data:
-                        print("Bad user data")
-                        continue
-                    email = user_data['user_email']
-                    phone = user_data['user_phone']
-                    print("Notifications: got flashcard user_id: {}, email: {}, phone: {}".format(user_id, email, phone))
-                    """
 
                     # send email
                     text_msg = "Here your flaschard: \nhiragana={}, kanji={}, translation={}".format(hiragana, kanji, word)

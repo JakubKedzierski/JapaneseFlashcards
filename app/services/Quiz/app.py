@@ -79,6 +79,8 @@ async def ProcessUsers():
                         user_db = {"id":user_id}
                         query = users.insert().values(**user_db)
                         await database.execute(query)
+                        
+                    print("[Quiz service]  user: {} saved to db ".format(user_id))
 
         await asyncio.sleep(1)
 
@@ -133,6 +135,8 @@ async def send_quiz():
 @app.on_event("startup")
 async def startup():
     app.schedule_task = asyncio.create_task(schedule_task())
+    app.users_task = asyncio.create_task(ProcessUsers())
+    app.flashcard_task = asyncio.create_task(ProcessFlashcards())
 
 if __name__ == "__main__":
     import uvicorn

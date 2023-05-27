@@ -15,6 +15,13 @@ flashcards = Table(
     Column("kanji", String),
 )
 
+users = Table(
+    "user",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("level", String),
+)
+
 metadata.create_all(engine)
 
 database = Database(DATABASE_URL)

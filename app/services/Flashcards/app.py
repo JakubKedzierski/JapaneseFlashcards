@@ -3,11 +3,12 @@ from random import randint
 
 from fastapi import FastAPI
 from kafka import KafkaConsumer, KafkaProducer
-from config import KAFKA_SERVER, KAFKA_FETCH_TOPIC, KAFKA_GENERATE_TOPIC
-from database import flashcards, database
+from config import KAFKA_SERVER, KAFKA_FETCH_TOPIC, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC
+from database import flashcards, database, users
 import asyncio
 from jisho_api.word import Word
 import uvicorn
+from sqlalchemy import select
 
 app = FastAPI()
 
@@ -25,9 +26,9 @@ async def fetch_word(level):
     }
 
 
-async def send_flashcard_to_kafka(flashcard, user_phone, user_email):
+async def send_flashcard_to_kafka(flashcard):
     producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
-    message = {**flashcard, "user_phone": user_phone, "user_email": user_email}
+    message = {**flashcard}
     producer.send(KAFKA_GENERATE_TOPIC, json.dumps(message).encode("utf-8"))
 
 
@@ -35,21 +36,19 @@ async def save_flashcard_to_database(flashcard):
     query = flashcards.insert().values(**flashcard)
     await database.execute(query)
 
-    # <usunac>
-    from sqlalchemy import select
-    query = select([flashcards])
-    x = await database.fetch_all(query)
-    print("Flashcard saved to db: {}".format(x))
-    # </usunac>
+    print("[Flashcard service] Flashcard saved to db")
 
 
 
-async def kafka_fetch_consumer():
+
+async def process_flashcards():
     consumer = KafkaConsumer(
         KAFKA_FETCH_TOPIC,
         bootstrap_servers=KAFKA_SERVER,
         value_deserializer=lambda m: json.loads(m.decode("utf-8")),
     )
+
+    print("[Flashcard service] Start processing flashcards \n")
 
     while True:
         msg = consumer.poll(timeout_ms=1000)
@@ -58,17 +57,51 @@ async def kafka_fetch_consumer():
             for _, records in msg.items():
                 for record in records:
                     user_id = record.value["user_id"]
-                    level = record.value["level"]
-                    user_phone = record.value["user_phone"]
-                    user_email = record.value["user_email"]
+                    
+                    # get user data
+                    async with database.transaction():
+                        query = select(users).where(users.c.id == user_id)
+                        user_data = await database.fetch_one(query)
 
-                    word = await fetch_word(level)
+                    user_id = user_data["id"]
+                    user_level = user_data["level"]
+                    print("[Flashcard service] get user data from db : {} {} ".format(user_id, user_level))
+
+                    word = await fetch_word(user_level)
 
                     flashcard = {**word, "user_id": user_id}
 
-                    await send_flashcard_to_kafka(flashcard, user_phone, user_email)
+                    await send_flashcard_to_kafka(flashcard)
                     await save_flashcard_to_database(flashcard)
                     print(flashcard)
+
+        await asyncio.sleep(1)
+
+async def ProcessUsers():
+    consumer = KafkaConsumer(
+        KAFKA_USER_TOPIC,
+        bootstrap_servers=KAFKA_SERVER,
+        value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+    )
+
+    print("[Flashcard service] Start processing users \n")
+
+    while True:
+        msg = consumer.poll(timeout_ms=1000)
+        if msg:
+            for _, records in msg.items():
+                for record in records:
+                    user_id = record.value["user_id"]
+                    user_level = record.value["level"]
+
+                    print("[Flashcard service] Received user: id: {} level: {} ".format(user_id, user_level))
+
+                    async with database.transaction():
+                        user_db = {"id":user_id, "level":user_level}
+                        query = users.insert().values(**user_db)
+                        await database.execute(query)
+                    
+                    print("[Flashcard service] user saved to db: {} ".format(user_id))
 
         await asyncio.sleep(1)
 
@@ -76,17 +109,14 @@ async def kafka_fetch_consumer():
 async def send_flashcard():
     producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
     user_id = 19
-    producer.send(KAFKA_FETCH_TOPIC, json.dumps({"user_id":str(user_id),
-                                                 "level" : str(1),
-                                                 "user_email":"example@aa",
-                                                 "user_phone": 123123123
-                                                 }).encode("utf-8"))
+    producer.send(KAFKA_FETCH_TOPIC, json.dumps({"user_id":str(user_id)}).encode("utf-8"))
     return 'FLASHCARD SENT'
 
 @app.on_event("startup")
 async def startup():
     await database.connect()
-    app.kafka_consumer_task = asyncio.create_task(kafka_fetch_consumer())
+    app.kafka_consumer_task = asyncio.create_task(process_flashcards())
+    app.user_task = asyncio.create_task(ProcessUsers())
 
 
 if __name__ == "__main__":

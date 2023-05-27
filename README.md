@@ -29,7 +29,7 @@ Japanese-English Flashcards - microservice project
   
 * UserManager - `python ./app.py`, localhost:8002  
     * Test:  
-        * save user - `curl -X POST -H "Content-Type: application/json" -d '{"user_email": "john.doe@example.com", "user_phone": "1234567890", "token": "my-token"}' http://localhost:8002/user/add_user`  
+        * save user - `curl -X POST -H "Content-Type: application/json" -d '{"user_email": "Kacper.Miowalski@example.com", "user_phone": "123456781", "token": "my-token", "level":"3"}' http://localhost:8002/user/add_user`  
         * get user - `curl localhost:8002/user/1`  
   
 * Quiz - `python ./app.py`, localhost:8003  
