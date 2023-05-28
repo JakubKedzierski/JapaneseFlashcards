@@ -130,4 +130,7 @@ dmypy.json
 kafka-data/*
 
 flashcards.db
+notifications.db
+quizes.db
+user_database.db
 .idea

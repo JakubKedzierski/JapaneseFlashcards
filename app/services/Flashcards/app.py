@@ -2,6 +2,7 @@ import json
 from random import randint
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from kafka import KafkaConsumer, KafkaProducer
 from config import KAFKA_SERVER, KAFKA_FETCH_TOPIC, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC
 from database import flashcards, database, users
@@ -12,6 +13,14 @@ from sqlalchemy import select
 
 app = FastAPI()
 
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # level => 1 or 2 or 3 or 4
 async def fetch_word(level):
@@ -39,6 +48,13 @@ async def save_flashcard_to_database(flashcard):
     print("[Flashcard service] Flashcard saved to db")
 
 
+@app.get("/flashcard/{level}", status_code=200)
+async def send_flashcard(level: str):
+    flashcard = await fetch_word(level)
+
+    print("[Flashcard service] Flashcard sent")
+    print(flashcard)
+    return flashcard
 
 
 async def process_flashcards():

@@ -1,5 +1,6 @@
 import json
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from kafka import  KafkaProducer, KafkaConsumer
 from config import KAFKA_SERVER, QUIZ_TOPIC, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC
 import asyncio
@@ -13,6 +14,16 @@ from datetime import datetime
 
 
 app = FastAPI()
+
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 quiz_producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER)
 
 async def send_quiz_job():

@@ -1,5 +1,7 @@
 import json
+from typing import Optional
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from database import users, database
 from sqlalchemy import select
@@ -8,10 +10,19 @@ from config import KAFKA_SERVER, KAFKA_USER_TOPIC
 
 app = FastAPI()
 
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 class User(BaseModel):
     user_email: str
-    user_phone: str | None = None
+    user_phone: Optional[str] = None
     token: str 
     level: str
 
