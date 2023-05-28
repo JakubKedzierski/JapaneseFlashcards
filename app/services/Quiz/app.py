@@ -2,7 +2,7 @@ import json
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from kafka import  KafkaProducer, KafkaConsumer
-from config import KAFKA_SERVER, QUIZ_TOPIC, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC
+from config import KAFKA_SERVER, QUIZ_TOPIC, KAFKA_GENERATE_TOPIC, KAFKA_USER_TOPIC, QUIZ_URL
 import asyncio
 import uvicorn
 import schedule
@@ -64,13 +64,13 @@ async def send_quiz_for_single_user(user_id):
         async with database.transaction():
             quiz_db = {"user_id":user_id, "date": quiz_date, "quiz_content":quiz_content}
             query = quizes.insert().values(**quiz_db)
-            await database.execute(query)
+            quiz_id = await database.execute(query)
     except Exception as e:
         print("[Quiz Service]: Saving quiz has failed, db error: {}".format(e))
 
     print("[Quiz Service] Quiz time - sending quiz to other services for user {}".format(user_id))
     
-    quiz = {"user_id" : user_id, "quiz_msg" : "Here is your quiz: quiz_link"}
+    quiz = {"user_id" : user_id, "quiz_msg" : "Here is your quiz: {}{}".format(QUIZ_URL, quiz_id)}
     quiz_producer.send(QUIZ_TOPIC, json.dumps(quiz).encode("utf-8"))
 
 

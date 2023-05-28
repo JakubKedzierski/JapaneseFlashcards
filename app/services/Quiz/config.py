@@ -3,4 +3,5 @@ QUIZ_TOPIC = "quiz_topic"
 KAFKA_GENERATE_TOPIC = "generate_flashcard"
 DATABASE_URL = "sqlite:///quizes.db"
 KAFKA_USER_TOPIC = "user_topic"
+QUIZ_URL = "http://localhost:3000/quiz/"
 
